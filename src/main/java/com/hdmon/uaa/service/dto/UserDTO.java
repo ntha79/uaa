@@ -7,6 +7,7 @@ import com.hdmon.uaa.domain.User;
 
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.format.annotation.NumberFormat;
 
 import javax.validation.constraints.*;
 import java.time.Instant;
@@ -34,6 +35,10 @@ public class UserDTO {
     @Email
     @Size(min = 5, max = 100)
     private String email;
+
+    @NumberFormat
+    @Size(min = 6, max = 100)
+    private String mobile;
 
     @Size(max = 256)
     private String imageUrl;
@@ -63,6 +68,7 @@ public class UserDTO {
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.email = user.getEmail();
+        //this.mobile = user.getMobile();
         this.activated = user.getActivated();
         this.imageUrl = user.getImageUrl();
         this.langKey = user.getLangKey();
@@ -113,6 +119,14 @@ public class UserDTO {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getMobile() {
+        return mobile;
+    }
+
+    public void setMobile(String mobile) {
+        this.mobile = mobile;
     }
 
     public String getImageUrl() {
@@ -186,6 +200,7 @@ public class UserDTO {
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +
             ", email='" + email + '\'' +
+            ", mobile='" + mobile + '\'' +
             ", imageUrl='" + imageUrl + '\'' +
             ", activated=" + activated +
             ", langKey='" + langKey + '\'' +

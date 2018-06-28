@@ -2,6 +2,7 @@ package com.hdmon.uaa.web.rest;
 
 import com.hdmon.uaa.config.Constants;
 import com.codahale.metrics.annotation.Timed;
+import com.hdmon.uaa.domain.IsoResponseEntity;
 import com.hdmon.uaa.domain.User;
 import com.hdmon.uaa.repository.UserRepository;
 import com.hdmon.uaa.security.AuthoritiesConstants;
@@ -11,6 +12,7 @@ import com.hdmon.uaa.service.dto.UserDTO;
 import com.hdmon.uaa.web.rest.errors.BadRequestAlertException;
 import com.hdmon.uaa.web.rest.errors.EmailAlreadyUsedException;
 import com.hdmon.uaa.web.rest.errors.LoginAlreadyUsedException;
+import com.hdmon.uaa.web.rest.errors.ResponseErrorCode;
 import com.hdmon.uaa.web.rest.util.HeaderUtil;
 import com.hdmon.uaa.web.rest.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
@@ -29,6 +31,8 @@ import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+
+import static org.hibernate.id.IdentifierGenerator.ENTITY_NAME;
 
 /**
  * REST controller for managing users.
@@ -186,5 +190,98 @@ public class UserResource {
         log.debug("REST request to delete User: {}", login);
         userService.deleteUser(login);
         return ResponseEntity.ok().headers(HeaderUtil.createAlert( "userManagement.deleted", login)).build();
+    }
+
+    /*=========================================================
+    * ================CAC HAM BO SUNG==========================
+    * =========================================================*/
+    /**
+     * Lấy thông tin bản ghi và danh sách bạn bè của User.
+     *
+     * @param mobile: id của User cần lấy
+     * @return the ResponseEntity with status 200 (OK) and the list of contacts in body
+     */
+    @GetMapping("/usersbymobile/{mobile}")
+    @Timed
+    public ResponseEntity<IsoResponseEntity> getUserByMobile(@PathVariable String mobile) {
+        log.debug("REST request to get User : {}", mobile);
+
+        IsoResponseEntity<User> responseEntity = new IsoResponseEntity<>();
+        HttpHeaders httpHeaders;
+
+        try {
+            if(!mobile.isEmpty()) {
+                User dbResults = userService.getUserInfoByMobile(mobile);
+
+                responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
+                responseEntity.setData(dbResults);
+                responseEntity.setMessage("users_successfull");
+
+                String urlRequest = String.format("/usersbymobile/%s", mobile);
+                httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
+            }
+            else
+            {
+                responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
+                responseEntity.setMessage("invalid_data");
+                responseEntity.setException("Mobile cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_invalid_data", "Mobile cannot not null!");
+            }
+        }
+        catch (Exception ex)
+        {
+            responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
+            responseEntity.setMessage("users_system_error");
+            responseEntity.setException(ex.getMessage());
+
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_system_error", ex.getMessage());
+        }
+
+        return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
+    }
+
+    /**
+     * GET /users/:login : get the "login" user.
+     *
+     * @param username the login of the user to find
+     * @return the ResponseEntity with status 200 (OK) and with body the "login" user, or with status 404 (Not Found)
+     */
+    @GetMapping("/usersbyusername/{username:" + Constants.LOGIN_REGEX + "}")
+    @Timed
+    public ResponseEntity<IsoResponseEntity> getUserByUsername(@PathVariable String username) {
+        log.debug("REST request to get User : {}", username);
+
+        IsoResponseEntity<User> responseEntity = new IsoResponseEntity<>();
+        HttpHeaders httpHeaders;
+
+        try {
+            if(!username.isEmpty()) {
+                User dbResults = userService.getUserInfoByUsername(username);
+
+                responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
+                responseEntity.setData(dbResults);
+                responseEntity.setMessage("users_successfull");
+
+                String urlRequest = String.format("/usersbyusername/%s", username);
+                httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
+            }
+            else
+            {
+                responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
+                responseEntity.setMessage("invalid_data");
+                responseEntity.setException("Username cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_invalid_data", "Username cannot not null!");
+            }
+        }
+        catch (Exception ex)
+        {
+            responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
+            responseEntity.setMessage("users_system_error");
+            responseEntity.setException(ex.getMessage());
+
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_system_error", ex.getMessage());
+        }
+
+        return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
     }
 }

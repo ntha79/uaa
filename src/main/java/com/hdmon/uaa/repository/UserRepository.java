@@ -44,4 +44,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findOneWithAuthoritiesByEmail(String email);
 
     Page<User> findAllByLoginNot(Pageable pageable, String login);
+
+    /*=========================================================
+    * ================CAC HAM BO SUNG==========================
+    * =========================================================*/
+    User findOneByMobile(String mobile);
+
+    User findOneByLoginIgnoreCase(String username);
 }

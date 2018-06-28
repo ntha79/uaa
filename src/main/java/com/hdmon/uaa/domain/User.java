@@ -8,6 +8,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.validator.constraints.Email;
+import org.springframework.format.annotation.NumberFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -58,6 +59,11 @@ public class User extends AbstractAuditingEntity implements Serializable {
     @Size(min = 5, max = 100)
     @Column(length = 100, unique = true)
     private String email;
+
+    @NumberFormat
+    @Size(min = 6, max = 100)
+    @Column(length = 100, unique = true)
+    private String mobile;
 
     @NotNull
     @Column(nullable = false)
@@ -143,6 +149,14 @@ public class User extends AbstractAuditingEntity implements Serializable {
         this.email = email;
     }
 
+    public String getMobile() {
+        return mobile;
+    }
+
+    public void setMobile(String mobile) {
+        this.mobile = mobile;
+    }
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -224,6 +238,7 @@ public class User extends AbstractAuditingEntity implements Serializable {
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +
             ", email='" + email + '\'' +
+            ", mobile='" + mobile + '\'' +
             ", imageUrl='" + imageUrl + '\'' +
             ", activated='" + activated + '\'' +
             ", langKey='" + langKey + '\'' +
