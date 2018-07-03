@@ -215,7 +215,7 @@ public class UserResource {
 
                 responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
                 responseEntity.setData(dbResults);
-                responseEntity.setMessage("users_successfull");
+                responseEntity.setMessage("users_usersbymobile_successfull");
 
                 String urlRequest = String.format("/usersbymobile/%s", mobile);
                 httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
@@ -223,9 +223,9 @@ public class UserResource {
             else
             {
                 responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
-                responseEntity.setMessage("invalid_data");
-                responseEntity.setException("Mobile cannot not null!");
-                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_invalid_data", "Mobile cannot not null!");
+                responseEntity.setMessage("users_usersbymobile_invalid");
+                responseEntity.setException("The Mobile cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_usersbymobile_invalid", "The Mobile cannot not null!");
             }
         }
         catch (Exception ex)
@@ -260,7 +260,7 @@ public class UserResource {
 
                 responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
                 responseEntity.setData(dbResults);
-                responseEntity.setMessage("users_successfull");
+                responseEntity.setMessage("users_usersbyusername_successfull");
 
                 String urlRequest = String.format("/usersbyusername/%s", username);
                 httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
@@ -268,9 +268,9 @@ public class UserResource {
             else
             {
                 responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
-                responseEntity.setMessage("invalid_data");
-                responseEntity.setException("Username cannot not null!");
-                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_invalid_data", "Username cannot not null!");
+                responseEntity.setMessage("users_usersbyusername_invalid");
+                responseEntity.setException("The Username cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_usersbyusername_invalid", "The Username cannot not null!");
             }
         }
         catch (Exception ex)
