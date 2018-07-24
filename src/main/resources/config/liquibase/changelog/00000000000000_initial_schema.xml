@@ -25,7 +25,7 @@
             <column name="password_hash" type="varchar(60)"/>
             <column name="first_name" type="varchar(50)"/>
             <column name="last_name" type="varchar(50)"/>
-            <column name="email" type="varchar(100)"/>                
+            <column name="email" type="varchar(100)"/>
 			<column name="mobile" type="varchar(50)">
 			    <constraints unique="true" nullable="false" uniqueConstraintName="ux_user_mobile"/>
             </column>
@@ -47,6 +47,12 @@
             </column>
             <column name="last_modified_by" type="varchar(50)"/>
             <column name="last_modified_date" type="timestamp"/>
+            <column name="nick_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="country_code" type="varchar(10)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <createIndex indexName="idx_user_login"
             tableName="jhi_user"
