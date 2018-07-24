@@ -1,0 +1,80 @@
+{
+    "fluentMethods": true,
+    "relationships": [
+        {
+            "relationshipType": "one-to-one",
+            "relationshipName": "userData",
+            "otherEntityName": "user",
+            "otherEntityField": "userId",
+            "ownerSide": true,
+            "otherEntityRelationshipName": "userData"
+        }
+    ],
+    "fields": [
+        {
+            "fieldName": "userId",
+            "fieldType": "Long",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "gender",
+            "fieldType": "Integer",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+		{
+            "fieldName": "address",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "birthday",
+            "fieldType": "Instant"
+        },
+        {
+            "fieldName": "about",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "coverUrl",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "sourceProvince",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "currentProvince",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "marriage",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "listCompany",
+            "fieldType": "String"
+        },
+		{
+            "fieldName": "listSchool",
+            "fieldType": "String"
+        },
+		{
+            "fieldName": "slogan",
+            "fieldType": "String"
+        },
+		{
+            "fieldName": "activedLevel",
+            "fieldType": "Integer"
+        }
+    ],
+    "changelogDate": "20180518074438",
+    "entityTableName": "jhi_user_data",
+    "dto": "no",
+    "pagination": "pagination",
+    "service": "serviceClass",
+    "jpaMetamodelFiltering": false,
+    "microserviceName": "Uaa"
+}

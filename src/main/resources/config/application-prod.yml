@@ -177,3 +177,6 @@ uaa:
 # ===================================================================
 
 application:
+    microservice:
+        notificationUrl: http://localhost:8080/notificationservice
+        otpApiUrl: http://localhost:8080/notificationservice

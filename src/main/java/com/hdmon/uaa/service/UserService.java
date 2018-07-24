@@ -1,16 +1,23 @@
 package com.hdmon.uaa.service;
 
-import com.hdmon.uaa.config.CacheConfiguration;
-import com.hdmon.uaa.domain.Authority;
-import com.hdmon.uaa.domain.User;
-import com.hdmon.uaa.repository.AuthorityRepository;
+import com.hdmon.uaa.config.ApplicationProperties;
 import com.hdmon.uaa.config.Constants;
+import com.hdmon.uaa.domain.Authority;
+import com.hdmon.uaa.domain.IsoResponseEntity;
+import com.hdmon.uaa.domain.User;
+import com.hdmon.uaa.domain.UserData;
+import com.hdmon.uaa.domain.enumeration.UserDataActiveLevel;
+import com.hdmon.uaa.domain.enumeration.UserDataGender;
+import com.hdmon.uaa.domain.enumeration.UserDataMarriage;
+import com.hdmon.uaa.repository.AuthorityRepository;
+import com.hdmon.uaa.repository.UserDataRepository;
 import com.hdmon.uaa.repository.UserRepository;
 import com.hdmon.uaa.security.AuthoritiesConstants;
 import com.hdmon.uaa.security.SecurityUtils;
-import com.hdmon.uaa.service.util.RandomUtil;
 import com.hdmon.uaa.service.dto.UserDTO;
-
+import com.hdmon.uaa.service.util.MicroserviceHelper;
+import com.hdmon.uaa.service.util.RandomUtil;
+import com.hdmon.uaa.web.rest.errors.ResponseErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
@@ -36,6 +43,11 @@ public class UserService {
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
+    private final UserDataRepository userDataRepository;
+    private final RegisterStatisticsService registerStatisticsService;
+
+    private final ApplicationProperties applicationProperties;
+    private String otpApiUrl;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -43,11 +55,17 @@ public class UserService {
 
     private final CacheManager cacheManager;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthorityRepository authorityRepository, CacheManager cacheManager) {
+    public UserService(UserRepository userRepository, UserDataRepository userDataRepository, RegisterStatisticsService registerStatisticsService, PasswordEncoder passwordEncoder, AuthorityRepository authorityRepository, CacheManager cacheManager, ApplicationProperties applicationProperties) {
         this.userRepository = userRepository;
+        this.userDataRepository = userDataRepository;
+        this.registerStatisticsService = registerStatisticsService;
+
         this.passwordEncoder = passwordEncoder;
         this.authorityRepository = authorityRepository;
         this.cacheManager = cacheManager;
+
+        this.applicationProperties = applicationProperties;
+        this.otpApiUrl = this.applicationProperties.getMicroservices().getOtpApiUrl();
     }
 
     public Optional<User> activateRegistration(String key) {
@@ -58,7 +76,7 @@ public class UserService {
                 user.setActivated(true);
                 user.setActivationKey(null);
                 cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+                cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
                 log.debug("Activated user: {}", user);
                 return user;
             });
@@ -74,7 +92,7 @@ public class UserService {
                 user.setResetKey(null);
                 user.setResetDate(null);
                 cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+                cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
                 return user;
            });
     }
@@ -86,7 +104,7 @@ public class UserService {
                 user.setResetKey(RandomUtil.generateResetKey());
                 user.setResetDate(Instant.now());
                 cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+                cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
                 return user;
             });
     }
@@ -114,7 +132,7 @@ public class UserService {
         newUser.setAuthorities(authorities);
         userRepository.save(newUser);
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(newUser.getLogin());
-        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(newUser.getEmail());
+        cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(newUser.getEmail());
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
@@ -145,7 +163,7 @@ public class UserService {
         user.setActivated(true);
         userRepository.save(user);
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+        cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
         log.debug("Created Information for User: {}", user);
         return user;
     }
@@ -170,7 +188,7 @@ public class UserService {
                 user.setLangKey(langKey);
                 user.setImageUrl(imageUrl);
                 cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+                cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
                 log.debug("Changed Information for User: {}", user);
             });
     }
@@ -199,7 +217,7 @@ public class UserService {
                     .map(authorityRepository::findOne)
                     .forEach(managedAuthorities::add);
                 cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+                cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
                 log.debug("Changed Information for User: {}", user);
                 return user;
             })
@@ -210,7 +228,7 @@ public class UserService {
         userRepository.findOneByLogin(login).ifPresent(user -> {
             userRepository.delete(user);
             cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-            cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+            cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
             log.debug("Deleted User: {}", user);
         });
     }
@@ -222,7 +240,7 @@ public class UserService {
                 String encryptedPassword = passwordEncoder.encode(password);
                 user.setPassword(encryptedPassword);
                 cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+                cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
                 log.debug("Changed password for User: {}", user);
             });
     }
@@ -259,7 +277,7 @@ public class UserService {
             log.debug("Deleting not activated user {}", user.getLogin());
             userRepository.delete(user);
             cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
-            cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+            cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(user.getEmail());
         }
     }
 
@@ -270,6 +288,8 @@ public class UserService {
         return authorityRepository.findAll().stream().map(Authority::getName).collect(Collectors.toList());
     }
 
+    //=========================================HDMON-START=========================================
+
     /**
      * Lấy thông tin của User thông qua mobile.
      * (Hàm bổ sung)
@@ -277,7 +297,7 @@ public class UserService {
      * @return the entity
      */
     @Transactional(readOnly = true)
-    public User getUserInfoByMobile(String mobile) {
+    public Optional<User> getUserInfoByMobile_hd(String mobile) {
         return userRepository.findOneByMobile(mobile);
     }
 
@@ -288,7 +308,179 @@ public class UserService {
      * @return the entity
      */
     @Transactional(readOnly = true)
-    public User getUserInfoByUsername(String username) {
+    public Optional<User> getUserInfoByUsername_hd(String username) {
         return userRepository.findOneByLoginIgnoreCase(username);
     }
+
+    /**
+     * Lấy thông tin của User thông qua userid.
+     * Last update date: 19-07-2018
+     * @return cấu trúc json về thông tin chi tiết của thành viên.
+     */
+    @Transactional(readOnly = true)
+    public User getInfoByUserId_hd(Long userId) {
+        return userRepository.findOne(userId);
+    }
+
+    //=========================================HDMON-START=========================================
+    /**
+     * Kiểm tra tồn tại số điện thoại.
+     * Last update date: 24-07-2018
+     * @return cấu trúc json về thông tin chi tiết của trạng thái kiểm tra.
+     */
+    public Map<String, Object> execCheckExistsByMobile_hd(String mobile)
+    {
+        boolean blResult = false;
+        String strOtpCode = "";
+
+        Optional<User> dbResults = getUserInfoByMobile_hd(mobile);
+        if(dbResults != null && dbResults.isPresent())
+        {
+            blResult = (dbResults.get().getId() > 0) ? true : false;
+
+            if(!blResult) {
+                strOtpCode = MicroserviceHelper.getNewestOtpCode(otpApiUrl, mobile, "register");
+                if(strOtpCode.isEmpty())
+                    strOtpCode = MicroserviceHelper.createOtpQueues(otpApiUrl, mobile, "register", "");
+            }
+        }
+        else
+        {
+            strOtpCode = MicroserviceHelper.getNewestOtpCode(otpApiUrl, mobile, "register");
+            if(strOtpCode.isEmpty())
+                strOtpCode = MicroserviceHelper.createOtpQueues(otpApiUrl, mobile, "register", "");
+        }
+
+        Map<String, Object> resData = new HashMap<>();
+        resData.put("exists", blResult);
+        resData.put("otpcode", strOtpCode);
+
+        return resData;
+    }
+
+    /**
+     * Kiểm tra tồn tại mã otp chưa.
+     * Last update date: 24-07-2018
+     * @return trả về giá trị true hoặc false.
+     */
+    public boolean execCheckOtpExists_hd(String prMobile, String prOtpCode)
+    {
+        boolean blOtpExists = MicroserviceHelper.checkOtpCodeExists(otpApiUrl, prMobile,"register", prOtpCode, 1);
+        return blOtpExists;
+    }
+
+    /**
+     * Tạo mới mã otp để đăng ký thành viên.
+     * Last update date: 24-07-2018
+     * @return trả về giá trị true hoặc false.
+     */
+    public String execCreateOtpCode_hd(String prMobile)
+    {
+        String strOtpCode = "";
+        strOtpCode = MicroserviceHelper.getNewestOtpCode(otpApiUrl, prMobile, "register");
+        if(strOtpCode.isEmpty())
+            strOtpCode = MicroserviceHelper.createOtpQueues(otpApiUrl, prMobile, "register", "");
+        return strOtpCode;
+    }
+
+    /**
+     * Đăng ký thành viên mới.
+     * Last update date: 23-07-2018
+     * @return cấu trúc json về thông tin chi tiết của thành viên.
+     */
+    public User execCreateUser_hd(String prUsername, String prMobile, String prOtpCode, String prPassword, String prCountryCode, String clientType, IsoResponseEntity outputEntity)
+    {
+        User newUser = null;
+
+        //Check username
+        Optional<User> existsWithUsername = getUserInfoByUsername_hd(prUsername);
+        if(existsWithUsername == null || !existsWithUsername.isPresent()) {
+            //Check mobile
+            Optional<User> existsWithMobile = getUserInfoByMobile_hd(prMobile);
+            if(existsWithMobile == null || !existsWithMobile.isPresent()) {
+                //Check otp
+                boolean blOtpValid = MicroserviceHelper.checkOtpCodeExists(otpApiUrl, prMobile,"register", prOtpCode, 2);
+                if(blOtpValid)
+                {
+                    newUser = new User();
+                    Authority authority = authorityRepository.findOne(AuthoritiesConstants.USER);
+                    Set<Authority> authorities = new HashSet<>();
+                    String encryptedPassword = passwordEncoder.encode(prPassword);
+                    newUser.setLogin(prUsername);
+                    // new user gets initially a generated password
+                    newUser.setPassword(encryptedPassword);
+                    newUser.setFirstName("");
+                    newUser.setLastName("");
+                    newUser.setEmail(prUsername + ".no-email@hdmon.com");
+                    newUser.setMobile(prMobile);
+                    newUser.setImageUrl("");
+                    newUser.setLangKey("vi");
+                    newUser.setNickName(prUsername);
+                    newUser.setCountryCode(prCountryCode);
+                    // new user is not active
+                    newUser.setActivated(true);
+                    // new user gets registration key
+                    newUser.setActivationKey("");
+                    authorities.add(authority);
+                    newUser.setAuthorities(authorities);
+                    newUser = userRepository.save(newUser);
+
+                    cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(newUser.getLogin());
+                    cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).evict(newUser.getMobile());
+                    log.debug("Created Information for User: {}", newUser);
+
+                    //Tạo user
+                    createDataForUser(newUser.getId(), clientType);
+                }
+                else
+                {
+                    outputEntity.setError(ResponseErrorCode.OTPNOTEXISTS.getValue());
+                    outputEntity.setMessage("otpnotexist");
+                    outputEntity.setException("This otp is not exists!");
+                }
+            }
+            else
+            {
+                outputEntity.setError(ResponseErrorCode.EXISTMOBILE.getValue());
+                outputEntity.setMessage("existmobile");
+                outputEntity.setException("This mobile exists in User table!");
+            }
+        }
+        else
+        {
+            outputEntity.setError(ResponseErrorCode.EXISTSUSERNAME.getValue());
+            outputEntity.setMessage("existusername");
+            outputEntity.setException("This username exists in User table!");
+        }
+        return newUser;
+    }
+
+    /**
+     * Tạo bổ sung dữ liệu sẵn cho các trường khác.
+     * Last update date: 23-07-2018
+     */
+    private void createDataForUser(Long newUserId, String clientType)
+    {
+        //Ghi dữ liệu thuộc tính mở rộng
+        UserData newUserData = new UserData();
+        newUserData.setUserId(newUserId);
+        newUserData.setGender(UserDataGender.UNKNOW.getValue());
+        newUserData.setBirthday(0L);
+        newUserData.setAddress("");
+        newUserData.setAbout("");
+        newUserData.setCoverUrl("");
+        newUserData.setSourceProvince("");
+        newUserData.setCurrentProvince("");
+        newUserData.setMarriage(UserDataMarriage.UNKNOW.getValue());
+        newUserData.setListCompany("[]");
+        newUserData.setListSchool("[]");
+        newUserData.setSlogan("");
+        newUserData.setActivedLevel(UserDataActiveLevel.MOBILE.getValue());             //active mobile
+        userDataRepository.save(newUserData);
+
+        //Ghi dữ liệu thống kê
+        registerStatisticsService.increaseStatistics_hd(clientType);
+    }
+
+    //===========================================HDMON-END===========================================
 }

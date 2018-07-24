@@ -1,7 +1,6 @@
 package com.hdmon.uaa.web.rest;
 
 import com.hdmon.uaa.UaaApp;
-import com.hdmon.uaa.config.CacheConfiguration;
 import com.hdmon.uaa.domain.Authority;
 import com.hdmon.uaa.domain.User;
 import com.hdmon.uaa.repository.UserRepository;
@@ -30,11 +29,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -105,7 +107,7 @@ public class UserResourceIntTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).clear();
-        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).clear();
+        cacheManager.getCache(UserRepository.USERS_BY_MOBILE_CACHE).clear();
         UserResource userResource = new UserResource(userRepository, userService, mailService);
         this.restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)

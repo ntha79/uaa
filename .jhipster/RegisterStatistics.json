@@ -1,0 +1,43 @@
+{
+    "name": "RegisterStatistics",
+    "fields": [
+        {
+            "fieldName": "currentDay",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "currentMonth",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "currentYear",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "count",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "countAndroid",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "countIos",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "countWeb",
+            "fieldType": "Integer"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20180724063855",
+    "entityTableName": "register_statistics",
+    "dto": "no",
+    "pagination": "pagination",
+    "service": "no",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "clientRootFolder": "",
+    "applications": "*"
+}

@@ -16,6 +16,7 @@ import org.springframework.security.data.repository.query.SecurityEvaluationCont
 import javax.annotation.PostConstruct;
 
 @Configuration
+//@EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class UaaWebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 

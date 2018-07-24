@@ -55,9 +55,8 @@ public class User extends AbstractAuditingEntity implements Serializable {
     @Column(name = "last_name", length = 50)
     private String lastName;
 
-    @Email
-    @Size(min = 5, max = 100)
-    @Column(length = 100, unique = true)
+    @Size(min = 0, max = 100)
+    @Column(length = 100)
     private String email;
 
     @NumberFormat
@@ -89,6 +88,14 @@ public class User extends AbstractAuditingEntity implements Serializable {
 
     @Column(name = "reset_date")
     private Instant resetDate = null;
+
+    @Size(max = 100)
+    @Column(name = "nick_name")
+    private String nickName;
+
+    @Size(max = 10)
+    @Column(name = "country_code")
+    private String countryCode;
 
     @JsonIgnore
     @ManyToMany
@@ -213,6 +220,22 @@ public class User extends AbstractAuditingEntity implements Serializable {
         this.authorities = authorities;
     }
 
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -243,6 +266,8 @@ public class User extends AbstractAuditingEntity implements Serializable {
             ", activated='" + activated + '\'' +
             ", langKey='" + langKey + '\'' +
             ", activationKey='" + activationKey + '\'' +
+            ", nickName='" + nickName + '\'' +
+            ", countryCode='" + countryCode + '\'' +
             "}";
     }
 }

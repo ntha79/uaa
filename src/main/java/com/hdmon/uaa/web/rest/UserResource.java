@@ -9,6 +9,7 @@ import com.hdmon.uaa.security.AuthoritiesConstants;
 import com.hdmon.uaa.service.MailService;
 import com.hdmon.uaa.service.UserService;
 import com.hdmon.uaa.service.dto.UserDTO;
+import com.hdmon.uaa.service.util.MicroserviceHelper;
 import com.hdmon.uaa.web.rest.errors.BadRequestAlertException;
 import com.hdmon.uaa.web.rest.errors.EmailAlreadyUsedException;
 import com.hdmon.uaa.web.rest.errors.LoginAlreadyUsedException;
@@ -27,6 +28,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -192,18 +195,16 @@ public class UserResource {
         return ResponseEntity.ok().headers(HeaderUtil.createAlert( "userManagement.deleted", login)).build();
     }
 
-    /*=========================================================
-    * ================CAC HAM BO SUNG==========================
-    * =========================================================*/
+    //=========================================HDMON-START=========================================
+
     /**
-     * Lấy thông tin bản ghi và danh sách bạn bè của User.
-     *
-     * @param mobile: id của User cần lấy
-     * @return the ResponseEntity with status 200 (OK) and the list of contacts in body
+     * GET  /hd/logout : đăng xuất khỏi hệ thống.
+     * Last update date: 20-07-2018
+     * @return cấu trúc json, báo kết quả dữ liệu lấy được.
      */
-    @GetMapping("/usersbymobile/{mobile}")
+    @GetMapping("/hd/users/getinfobymobile/{mobile}")
     @Timed
-    public ResponseEntity<IsoResponseEntity> getUserByMobile(@PathVariable String mobile) {
+    public ResponseEntity<IsoResponseEntity> getUserByMobile_hd(@PathVariable String mobile) {
         log.debug("REST request to get User : {}", mobile);
 
         IsoResponseEntity<User> responseEntity = new IsoResponseEntity<>();
@@ -211,44 +212,46 @@ public class UserResource {
 
         try {
             if(!mobile.isEmpty()) {
-                User dbResults = userService.getUserInfoByMobile(mobile);
+                Optional<User> dbResults = userService.getUserInfoByMobile_hd(mobile);
+                User resData = (dbResults != null && dbResults.isPresent()) ? dbResults.get() : null;
+                if(resData != null)
+                    resData.setEmail(getRealEmail(resData));
 
                 responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
-                responseEntity.setData(dbResults);
-                responseEntity.setMessage("users_usersbymobile_successfull");
+                responseEntity.setData(resData);
+                responseEntity.setMessage("successfull");
 
-                String urlRequest = String.format("/usersbymobile/%s", mobile);
+                String urlRequest = String.format("/hd/users/getinfobymobile/%s", mobile);
                 httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
             }
             else
             {
                 responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
-                responseEntity.setMessage("users_usersbymobile_invalid");
+                responseEntity.setMessage("invalid");
                 responseEntity.setException("The Mobile cannot not null!");
-                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_usersbymobile_invalid", "The Mobile cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "invalid", "The Mobile cannot not null!");
             }
         }
         catch (Exception ex)
         {
             responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
-            responseEntity.setMessage("users_system_error");
+            responseEntity.setMessage("system_error");
             responseEntity.setException(ex.getMessage());
 
-            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_system_error", ex.getMessage());
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "system_error", ex.getMessage());
         }
 
         return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
     }
 
     /**
-     * GET /users/:login : get the "login" user.
-     *
-     * @param username the login of the user to find
-     * @return the ResponseEntity with status 200 (OK) and with body the "login" user, or with status 404 (Not Found)
+     * GET /hd/users/getinfobyusername/{username} : lấy thông tin thành viên thông qua username.
+     * Last update date: 20-07-2018
+     * @return cấu trúc json, báo kết quả dữ liệu lấy được.
      */
-    @GetMapping("/usersbyusername/{username:" + Constants.LOGIN_REGEX + "}")
+    @GetMapping("/hd/users/getinfobyusername/{username:" + Constants.LOGIN_REGEX + "}")
     @Timed
-    public ResponseEntity<IsoResponseEntity> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<IsoResponseEntity> getUserByUsername_hd(@PathVariable String username) {
         log.debug("REST request to get User : {}", username);
 
         IsoResponseEntity<User> responseEntity = new IsoResponseEntity<>();
@@ -256,32 +259,192 @@ public class UserResource {
 
         try {
             if(!username.isEmpty()) {
-                User dbResults = userService.getUserInfoByUsername(username);
+                Optional<User> dbResults = userService.getUserInfoByUsername_hd(username);
+                User resData = (dbResults != null && dbResults.isPresent()) ? dbResults.get() : null;
+                if(resData != null)
+                    resData.setEmail(getRealEmail(resData));
 
                 responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
-                responseEntity.setData(dbResults);
-                responseEntity.setMessage("users_usersbyusername_successfull");
+                responseEntity.setData(resData);
+                responseEntity.setMessage("successfull");
 
-                String urlRequest = String.format("/usersbyusername/%s", username);
+                String urlRequest = String.format("/hd/users/getinfobyusername/%s", username);
                 httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
             }
             else
             {
                 responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
-                responseEntity.setMessage("users_usersbyusername_invalid");
+                responseEntity.setMessage("invalid");
                 responseEntity.setException("The Username cannot not null!");
-                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_usersbyusername_invalid", "The Username cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "invalid", "The Username cannot not null!");
             }
         }
         catch (Exception ex)
         {
             responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
-            responseEntity.setMessage("users_system_error");
+            responseEntity.setMessage("system_error");
             responseEntity.setException(ex.getMessage());
 
-            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "users_system_error", ex.getMessage());
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "system_error", ex.getMessage());
         }
 
         return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
     }
+
+    /**
+     * GET  /hd/users/getinfobyuserid/{userId} : lấy thông tin thành viên thông qua userId.
+     * Last update date: 20-07-2018
+     * @return cấu trúc json, báo kết quả dữ liệu lấy được.
+     */
+    @GetMapping("/hd/users/getinfobyuserid/{userId}")
+    @Timed
+    public ResponseEntity<IsoResponseEntity> getUserByUserId_hd(@PathVariable Long userId) {
+        log.debug("REST request to get User : {}", userId);
+
+        IsoResponseEntity<User> responseEntity = new IsoResponseEntity<>();
+        HttpHeaders httpHeaders;
+
+        try {
+            if(userId != null && userId > 0) {
+                User dbResults = userService.getInfoByUserId_hd(userId);
+                dbResults.setEmail(getRealEmail(dbResults));
+
+                responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
+                responseEntity.setData(dbResults);
+                responseEntity.setMessage("successfull");
+
+                String urlRequest = String.format("/hd/users/getinfobyuserid/%s", userId);
+                httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
+            }
+            else
+            {
+                responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
+                responseEntity.setMessage("invalid");
+                responseEntity.setException("The UserId cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "invalid", "The UserId cannot not null!");
+            }
+        }
+        catch (Exception ex)
+        {
+            responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
+            responseEntity.setMessage("system_error");
+            responseEntity.setException(ex.getMessage());
+
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "system_error", ex.getMessage());
+        }
+
+        return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
+    }
+
+    /**
+     * GET /hd/users/checkexists/username/{username} : kiểm tra username đã tồn tại trong hệ thống chưa
+     * không yêu cầu đăng nhập khi gọi.
+     * Last update date: 20-07-2018
+     * @return cấu trúc json, báo kết quả dữ liệu lấy được.
+     */
+    @GetMapping("/hd/users/checkexists/username/{username:" + Constants.LOGIN_REGEX + "}")
+    @Timed
+    public ResponseEntity<IsoResponseEntity> checkExistsByUsername_hd(@PathVariable String username) {
+        log.debug("REST request to check exist User : {}", username);
+
+        IsoResponseEntity responseEntity = new IsoResponseEntity();
+        HttpHeaders httpHeaders;
+
+        try {
+            if(!username.isEmpty()) {
+                boolean blResult = false;
+                Optional<User> dbResults = userService.getUserInfoByUsername_hd(username);
+                if(dbResults != null && dbResults.isPresent())
+                {
+                    blResult = (dbResults.get().getId() > 0) ? true : false;
+                }
+
+                responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
+                responseEntity.setData(blResult);
+                responseEntity.setMessage("successfull");
+
+                String urlRequest = String.format("/hd/users/checkexists/username/%s", username);
+                httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
+            }
+            else
+            {
+                responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
+                responseEntity.setMessage("invalid");
+                responseEntity.setException("The Username cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "invalid", "The Username cannot not null!");
+            }
+        }
+        catch (Exception ex)
+        {
+            responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
+            responseEntity.setMessage("system_error");
+            responseEntity.setException(ex.getMessage());
+
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "system_error", ex.getMessage());
+        }
+
+        return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
+    }
+
+    /**
+     * GET /hd/users/checkexists/mobile/{mobile} : kiểm tra mobile đã tồn tại trong hệ thống chưa
+     * không yêu cầu đăng nhập khi gọi.
+     * Last update date: 20-07-2018
+     * @return cấu trúc json, báo kết quả dữ liệu lấy được.
+     */
+    @GetMapping("/hd/users/checkexists/mobile/{mobile}")
+    @Timed
+    public ResponseEntity<IsoResponseEntity> checkExistsByMobile_hd(HttpServletRequest request, HttpServletResponse response, @PathVariable String mobile) {
+        log.debug("REST request to check exist User : {}", mobile);
+
+        IsoResponseEntity responseEntity = new IsoResponseEntity();
+        HttpHeaders httpHeaders;
+
+        try {
+            if(!mobile.isEmpty()) {
+                Map<String, Object> resData = userService.execCheckExistsByMobile_hd(mobile);
+
+                responseEntity.setError(ResponseErrorCode.SUCCESSFULL.getValue());
+                responseEntity.setData(resData);
+                responseEntity.setMessage("successfull");
+
+                String urlRequest = String.format("/hd/users/checkexists/mobile/%s", mobile);
+                httpHeaders = HeaderUtil.createAlert(ENTITY_NAME, urlRequest);
+            }
+            else
+            {
+                responseEntity.setError(ResponseErrorCode.INVALIDDATA.getValue());
+                responseEntity.setMessage("invalid");
+                responseEntity.setException("The Mobile cannot not null!");
+                httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "invalid", "The Mobile cannot not null!");
+            }
+        }
+        catch (Exception ex)
+        {
+            responseEntity.setError(ResponseErrorCode.SYSTEM_ERROR.getValue());
+            responseEntity.setMessage("system_error");
+            responseEntity.setException(ex.getMessage());
+
+            httpHeaders = HeaderUtil.createFailureAlert(ENTITY_NAME, "system_error", ex.getMessage());
+        }
+
+        return new ResponseEntity<>(responseEntity, httpHeaders, HttpStatus.OK);
+    }
+
+    /**
+     * So sánh và lấy giá trị thực của email.
+     * Last update date: 20-07-2018
+     * @return trả về giá trị email thực sự của User.
+     */
+    private String getRealEmail(User dbResults)
+    {
+        String realEmail = dbResults.getEmail();
+        if(dbResults != null && dbResults.getId() != null) {
+            String tempEmail =  dbResults.getLogin() + ".no-email@hdmon.com";
+            if(realEmail.equals(tempEmail))
+                realEmail = "";
+        }
+        return realEmail;
+    }
+    //===========================================HDMON-END===========================================
 }

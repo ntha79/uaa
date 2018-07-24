@@ -14,6 +14,10 @@ public enum ResponseErrorCode {
     NOTFOUND(-3),
     DENIED(-4),
     NOMEMBER(-5),
+    REJECTED(-6),
+    EXISTSUSERNAME(-7),
+    EXISTMOBILE(-8),
+    OTPNOTEXISTS(-9),
     SYSTEM_ERROR(-100);
 
     private final int value;

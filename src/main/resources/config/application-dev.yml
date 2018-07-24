@@ -147,6 +147,9 @@ jhipster:
         client-authorization:
             client-id: internal
             client-secret: internal
+        authentication:
+          jwt:
+            secret: HelloWorld!
     mail: # specific JHipster mail property, for standard properties see MailProperties
         from: uaa@localhost
         base-url: http://127.0.0.1:9999
@@ -176,12 +179,12 @@ uaa:
         password: password
         alias: selfsigned
     web-client-configuration:
-        # Access Token is valid for 5 mins
-        access-token-validity-in-seconds: 300
+        # Access Token is valid for 1 day
+        access-token-validity-in-seconds: 86400
         # Refresh Token is valid for 7 days
         refresh-token-validity-in-seconds-for-remember-me: 604800
         client-id: web_app
-        secret: changeit
+        secret: changeit1111
 
 # ===================================================================
 # Application specific properties
@@ -193,3 +196,6 @@ uaa:
 # ===================================================================
 
 application:
+    microservice:
+        notification-url: http://localhost:8080/notificationservice
+        otp-api-url: http://localhost:8080/notificationservice
